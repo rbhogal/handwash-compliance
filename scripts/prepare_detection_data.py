@@ -33,7 +33,6 @@ Usage:
 from __future__ import annotations
 
 import argparse
-import os
 import shutil
 import sys
 from pathlib import Path
@@ -74,17 +73,21 @@ def parse_args() -> argparse.Namespace:
 
 # ── Class mapping ──────────────────────────────────────────────────────────────
 
-# Our YOLO class IDs
+# Our YOLO class IDs — 2 classes for MVP
+# NOTE: soap_dispenser intentionally excluded.
+# Open Images V7 has very few soap dispenser examples (~58) and Roboflow
+# alternatives are unreliable (mix soaps and dispensers separately).
+# The HandwashDetector is not called at runtime anyway — zones are polygon-based.
+# Add soap_dispenser as class 2 in a future iteration with purpose-collected data.
 CLASS_MAP = {
     "person": 0,
     "sink": 1,
-    "soap_dispenser": 2,
 }
 
 # Open Images uses these exact label strings (case-sensitive)
 OI_LABELS = {
     "sink": "Sink",
-    "soap_dispenser": "Soap dispenser",
+    # "soap_dispenser": "Soap dispenser",  # excluded — see CLASS_MAP note above
 }
 
 # COCO label string (fiftyone uses lowercase)
@@ -159,12 +162,11 @@ def _export_oi_to_raw(ds, raw_out: Path, oi_label: str) -> None:
     with open(ann_file, "w") as f:
         for sample in ds:
             img_path = sample.filepath
-            w, h = sample.metadata.width, sample.metadata.height
             boxes = []
             if sample.ground_truth:
                 for det in sample.ground_truth.detections:
                     if det.label == oi_label:
-                        # fiftyone bounding_box: [x, y, w, h] relative
+                        # fiftyone bounding_box: [x, y, w, h] already relative (0-1)
                         bx, by, bw, bh = det.bounding_box
                         boxes.append(f"{bx:.6f},{by:.6f},{bw:.6f},{bh:.6f}")
             if boxes:
@@ -181,8 +183,6 @@ def _export_coco_to_raw(ds, raw_out: Path) -> None:
     with open(ann_file, "w") as f:
         for sample in ds:
             img_path = sample.filepath
-            w = sample.metadata.width
-            h = sample.metadata.height
             boxes = []
             if sample.ground_truth:
                 for det in sample.ground_truth.detections:
@@ -276,11 +276,11 @@ path: {out_dir.resolve()}
 train: images/train
 val:   images/val
 
-nc: 3
+nc: 2
 names:
   0: person
   1: sink
-  2: soap_dispenser
+# soap_dispenser (class 2) excluded from MVP — see CLASS_MAP in this script for rationale
 """
     yaml_path = out_dir / "dataset.yaml"
     yaml_path.write_text(yaml_content)

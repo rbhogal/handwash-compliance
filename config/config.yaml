@@ -20,7 +20,9 @@ detection:
   classes:
     person: 0
     sink: 1
-    soap_dispenser: 2
+    # soap_dispenser: 2  — excluded from MVP (insufficient training data)
+    # Open Images V7 has ~58 examples; HandwashDetector is not called at
+    # runtime — zones are polygon-based. Re-add with purpose-collected data.
   input_size: 640              # YOLOv8 input resolution
 
 # ─── Tracking ─────────────────────────────────────────────────────────────────

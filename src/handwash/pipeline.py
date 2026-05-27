@@ -60,6 +60,11 @@ class HandwashPipeline:
         self._topdown_cfg = cam_cfg.get("topdown", {})
 
         # ── Layer 1: Detection ────────────────────────────────────
+        # NOTE: HandwashDetector is instantiated but not called in the live
+        # pipeline loop. Zone membership uses fixed config.yaml polygons;
+        # person tracking uses PersonTracker (ByteTrack) below.
+        # Reserved for future use: automatic zone calibration, multi-sink
+        # environments, or soap dispenser confirmation logic.
         self.detector = HandwashDetector(
             weights=cfg["detection"]["weights"],
             conf_threshold=cfg["detection"]["conf_threshold"],

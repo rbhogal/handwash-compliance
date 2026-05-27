@@ -22,14 +22,24 @@ class Detection:
 
 class HandwashDetector:
     """
-    Wraps a YOLOv8 model to detect persons, sinks, and soap dispensers.
+    Wraps a YOLOv8 model to detect persons and sinks.
+
+    NOTE: This detector is not called in the live pipeline at runtime.
+    Zone membership is determined by fixed polygon definitions in config.yaml,
+    and person tracking is handled by PersonTracker (ByteTrack).
+    HandwashDetector is reserved for future use — e.g. automatic zone
+    calibration, sink/dispenser confirmation, or multi-sink environments.
+
+    soap_dispenser (class 2) is excluded from the MVP model due to
+    insufficient training data (~58 Open Images examples). Re-add when
+    purpose-collected data is available.
 
     Usage:
         detector = HandwashDetector("models/weights/yolov8_detection.pt")
         detections = detector.detect(frame)
     """
 
-    CLASS_NAMES = {0: "person", 1: "sink", 2: "soap_dispenser"}
+    CLASS_NAMES = {0: "person", 1: "sink"}  # soap_dispenser deferred to future iteration
 
     def __init__(
         self,

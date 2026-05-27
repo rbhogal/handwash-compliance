@@ -8,9 +8,8 @@ build/
 venv/
 *.egg
 
-# Data & weights (large files)
-data/raw/
-data/processed/
+# Data & weights (large files — never commit datasets or trained weights)
+data/
 models/weights/
 models/exports/
 

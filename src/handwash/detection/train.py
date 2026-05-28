@@ -109,13 +109,14 @@ def main() -> None:
         scale=0.5,
     )
 
-    best_weights = Path(args.project) / args.name / "weights" / "best.pt"
+    # Ultralytics prepends 'runs/detect/' to the project path automatically
+    best_weights = results.save_dir / "weights" / "best.pt"
     print(f"\nTraining complete.")
     print(f"Best weights: {best_weights}")
 
     if args.copy_weights:
         dest = Path("models/weights/yolov8_detection.pt")
-        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.parent.mkdir(parents=True, exist_ok=True)  # create models/weights/ if missing
         shutil.copy2(best_weights, dest)
         print(f"Copied → {dest}")
     else:

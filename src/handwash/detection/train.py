@@ -59,7 +59,7 @@ def parse_args() -> argparse.Namespace:
         "--device", default="0",
         help="GPU index (e.g. '0') or 'cpu'. Use '0,1' for multi-GPU.",
     )
-    p.add_argument("--project", default="runs/detection", help="Output root directory")
+    p.add_argument("--project", default="runs/detect", help="Output root directory — ultralytics saves to {project}/{name}/weights/")
     p.add_argument("--name", default="exp", help="Run name (subfolder under --project)")
     p.add_argument(
         "--freeze", type=int, default=0,

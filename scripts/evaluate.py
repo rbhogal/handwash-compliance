@@ -18,7 +18,7 @@ def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser()
     p.add_argument("--weights", default="models/weights/gesture_classifier.pt",
                    help="Path to YOLOv8-cls .pt weights file")
-    p.add_argument("--data", default="data/processed/gestures",
+    p.add_argument("--data", default="data/gesture/dataset",
                    help="Dataset root (expects test/ sub-folder with one dir per class)")
     p.add_argument("--imgsz", type=int, default=224,
                    help="Input resolution (must match training)")

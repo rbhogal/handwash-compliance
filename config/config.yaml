@@ -47,22 +47,23 @@ zones:
 compliance:
   min_wash_duration_sec: 20    # WHO guideline minimum
   max_entry_to_sink_sec: 10    # how long before a violation is flagged
-  who_steps: 7                 # total steps to verify
+  who_steps: 6                 # 6 WHO rubbing steps (matches METC annotation codes 1-6)
 
 # ─── Gesture Classifier (Layer 2 — YOLOv8-cls) ───────────────────────────────
+# Classes align to METC annotation codes 1-6 (code 0 = "other", discarded).
+# Labels match WHO Hand Hygiene poster steps 2-7.
 gesture:
   weights: models/weights/gesture_classifier.pt
-  num_classes: 7               # WHO 7 steps (0-indexed)
+  num_classes: 6
   conf_threshold: 0.6
   input_size: 224              # YOLOv8-cls crop resolution
   step_labels:
-    0: "palm_to_palm"
-    1: "right_over_left"
-    2: "left_over_right"
-    3: "interlaced"
-    4: "thumbs"
-    5: "fingertips_to_palm"
-    6: "wrist"
+    0: "palm_to_palm"          # METC code 1 — WHO step 2
+    1: "palm_over_dorsum"      # METC code 2 — WHO step 3
+    2: "fingers_interlaced"    # METC code 3 — WHO step 4
+    3: "backs_of_fingers"      # METC code 4 — WHO step 5
+    4: "rotational_thumb"      # METC code 5 — WHO step 6
+    5: "fingertips_to_palm"    # METC code 6 — WHO step 7
 
 # ─── Output ───────────────────────────────────────────────────────────────────
 output:

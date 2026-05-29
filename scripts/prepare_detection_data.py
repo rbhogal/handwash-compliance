@@ -1,10 +1,9 @@
 """
 Download and prepare the Layer 1 detection dataset.
 
-Merges three data sources into one 3-class YOLO dataset:
-    0 = person        (COCO 2017)
-    1 = sink          (Open Images V7 — includes kitchen + clinical sinks)
-    2 = soap_dispenser (Open Images V7)
+Merges two data sources into one 2-class YOLO dataset:
+    0 = person  (COCO 2017)
+    1 = sink    (Open Images V7 — includes kitchen + clinical sinks)
 
 Output layout (under --output-dir):
     detection_dataset/
@@ -43,6 +42,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 
 # ── CLI ────────────────────────────────────────────────────────────────────────
+
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Prepare detection training data")
@@ -95,6 +95,7 @@ COCO_PERSON_LABEL = "person"
 
 
 # ── Download helpers ───────────────────────────────────────────────────────────
+
 
 def download_open_images(raw_dir: Path, max_samples: int) -> None:
     """Download Sink + Soap dispenser images from Open Images V7 via fiftyone."""
@@ -153,9 +154,11 @@ def download_coco_person(raw_dir: Path, max_samples: int) -> None:
 
 # ── Export helpers ─────────────────────────────────────────────────────────────
 
+
 def _export_oi_to_raw(ds, raw_out: Path, oi_label: str) -> None:
     """Save Open Images detections as (image_path, [(x1,y1,x2,y2)] in relative coords)."""
     import fiftyone as fo
+
     raw_out.mkdir(parents=True, exist_ok=True)
     ann_file = raw_out / "annotations.txt"
 
@@ -196,6 +199,7 @@ def _export_coco_to_raw(ds, raw_out: Path) -> None:
 
 
 # ── Convert to YOLO format ─────────────────────────────────────────────────────
+
 
 def build_yolo_dataset(raw_dir: Path, out_dir: Path, val_split: float) -> None:
     """
@@ -240,7 +244,9 @@ def build_yolo_dataset(raw_dir: Path, out_dir: Path, val_split: float) -> None:
     n_val = int(len(all_entries) * val_split)
     splits = {"val": all_entries[:n_val], "train": all_entries[n_val:]}
 
-    print(f"\nBuilding YOLO dataset: {len(splits['train'])} train, {len(splits['val'])} val images")
+    print(
+        f"\nBuilding YOLO dataset: {len(splits['train'])} train, {len(splits['val'])} val images"
+    )
 
     for split, entries in splits.items():
         img_dir = out_dir / "images" / split
@@ -265,6 +271,7 @@ def build_yolo_dataset(raw_dir: Path, out_dir: Path, val_split: float) -> None:
 
 
 # ── Write dataset YAML ─────────────────────────────────────────────────────────
+
 
 def write_dataset_yaml(out_dir: Path) -> None:
     """Write the dataset.yaml consumed by ultralytics training."""
@@ -294,6 +301,7 @@ names:
 
 # ── Utils ──────────────────────────────────────────────────────────────────────
 
+
 def _count_lines(path: Path) -> int:
     try:
         with open(path) as f:
@@ -303,6 +311,7 @@ def _count_lines(path: Path) -> int:
 
 
 # ── Main ───────────────────────────────────────────────────────────────────────
+
 
 def main() -> None:
     args = parse_args()

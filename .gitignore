@@ -12,6 +12,7 @@ venv/
 data/
 models/weights/
 models/exports/
+*.pt
 
 # Jupyter
 .ipynb_checkpoints/

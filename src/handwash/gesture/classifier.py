@@ -1,6 +1,6 @@
 """
 Layer 2 — Gesture Quality Scoring
-YOLOv8-classify wrapper for WHO 7-step hand hygiene gesture recognition.
+YOLOv8-classify wrapper for WHO 6-step hand hygiene gesture recognition.
 
 Each frame is classified independently; a short rolling window provides
 temporal smoothing via majority vote so noisy single-frame predictions
@@ -17,13 +17,12 @@ from ultralytics import YOLO
 
 
 WHO_STEP_LABELS = {
-    0: "palm_to_palm",
-    1: "right_over_left",
-    2: "left_over_right",
-    3: "interlaced",
-    4: "thumbs",
-    5: "fingertips_to_palm",
-    6: "wrist",
+    0: "palm_to_palm",          # METC code 1 — WHO step 2
+    1: "palm_over_dorsum",      # METC code 2 — WHO step 3
+    2: "fingers_interlaced",    # METC code 3 — WHO step 4
+    3: "backs_of_fingers",      # METC code 4 — WHO step 5
+    4: "rotational_thumb",      # METC code 5 — WHO step 6
+    5: "fingertips_to_palm",    # METC code 6 — WHO step 7
 }
 
 

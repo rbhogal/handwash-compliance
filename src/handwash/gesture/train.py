@@ -73,7 +73,7 @@ def main() -> None:
         name=args.name,
         dropout=0.2,
         flipud=0.0,    # vertical flip not meaningful for hand gestures
-        fliplr=0.5,
+        fliplr=0.0,    # horizontal flip disabled — mirroring creates false gesture variants
         degrees=15.0,  # slight rotation is realistic
         translate=0.1,
         scale=0.2,

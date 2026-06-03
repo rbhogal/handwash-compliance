@@ -36,9 +36,10 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--imgsz",   type=int,   default=224)
     p.add_argument("--batch",   type=int,   default=32)
     p.add_argument("--lr0",     type=float, default=1e-3)
-    p.add_argument("--device",  default=_default_device())
-    p.add_argument("--project", default="runs/gesture", help="Save directory — ultralytics saves to {project}/{name}/weights/")
-    p.add_argument("--name",    default="exp",          help="Run name")
+    p.add_argument("--device",     default=_default_device())
+    p.add_argument("--project",    default="runs/gesture", help="Save directory — ultralytics saves to {project}/{name}/weights/")
+    p.add_argument("--name",       default="exp",          help="Run name")
+    p.add_argument("--no-dropout", action="store_true",    help="Disable dropout — use for intentional overfit test")
     return p.parse_args()
 
 
@@ -71,7 +72,7 @@ def main() -> None:
         device=args.device,
         project=args.project,
         name=args.name,
-        dropout=0.2,
+        dropout=0.0 if args.no_dropout else 0.2,
         flipud=0.0,    # vertical flip not meaningful for hand gestures
         fliplr=0.0,    # horizontal flip disabled — mirroring creates false gesture variants
         degrees=15.0,  # slight rotation is realistic

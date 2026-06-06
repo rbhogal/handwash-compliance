@@ -92,7 +92,8 @@ Training was done in two stages on Google Colab using `notebooks/finetune_metc.i
 | Layer | Dataset | Source |
 |-------|---------|--------|
 | Detection | COCO 2017 (person) + Open Images V7 (sink) | Downloaded via fiftyone |
-| Gesture | METC subset — 212 videos, 6 WHO steps | https://zenodo.org/records/5808789 |
+| Gesture (Stage 1) | PSKUS — 3,185 videos, 6 WHO steps | Private dataset |
+| Gesture (Stage 2) | METC subset — 212 videos, 6 WHO steps | https://zenodo.org/records/5808789 |
 
 ## Gesture Classes (6 WHO steps)
 

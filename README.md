@@ -47,8 +47,7 @@ The gesture classifier was fine-tuned from a PSKUS-trained baseline onto the MET
 
 | Model | Test Accuracy |
 |-------|--------------|
-| PSKUS baseline (cross-dataset) | 13.3% |
-| Fine-tuned on METC | **71.4%** |
+| Trained on PSKUS → fine-tuned on METC (ours) | **71.4%** |
 | Original paper (Xception, METC) | 66.8% |
 
 Per-class accuracy on METC test set (8,054 frames):

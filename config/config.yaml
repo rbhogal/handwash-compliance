@@ -2,8 +2,8 @@
 cameras:
   wide:
     source: 0                  # wide-angle camera: index or RTSP URL
-    width: 1280
-    height: 720
+    width: 1920
+    height: 1080
     fps: 30
   topdown:
     source: 2                  # top-down camera aimed at sink: index or RTSP URL
@@ -15,8 +15,8 @@ cameras:
 # ─── Detection (Layer 1) ──────────────────────────────────────────────────────
 detection:
   weights: models/weights/yolov8_detection.pt
-  conf_threshold: 0.4
-  iou_threshold: 0.45
+  conf_threshold: 0.25
+  iou_threshold: 0.3
   classes:
     person: 0
     sink: 1
@@ -37,11 +37,11 @@ tracking:
 # ─── Zone Definitions (polygon vertices, pixel coords) ────────────────────────
 zones:
   entry:
-    polygon: [[0, 0], [1280, 0], [1280, 200], [0, 200]]
+    polygon: [[1239,158],[1453,183],[1355,768],[1171,804]]
   sink:
-    polygon: [[400, 200], [880, 200], [880, 600], [400, 600]]
+    polygon: [[4,180],[1073,21],[1109,1067],[7,1066]]
   exit:
-    polygon: [[0, 520], [1280, 520], [1280, 720], [0, 720]]
+    polygon: [[1597,1074],[1623,17],[1915,10],[1911,1068]]
 
 # ─── Compliance Rules ─────────────────────────────────────────────────────────
 compliance:
@@ -55,7 +55,7 @@ compliance:
 gesture:
   weights: models/weights/gesture_classifier.pt
   num_classes: 6
-  conf_threshold: 0.6
+  conf_threshold: 0.4
   input_size: 224              # YOLOv8-cls crop resolution
   step_labels:
     0: "palm_to_palm"          # METC code 1 — WHO step 2

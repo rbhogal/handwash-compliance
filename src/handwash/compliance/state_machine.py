@@ -74,7 +74,7 @@ class ComplianceStateMachine:
     ) -> None:
         self.min_wash_duration_sec = min_wash_duration_sec
         self.max_entry_to_sink_sec = max_entry_to_sink_sec
-        self.required_steps = required_steps or set(range(7))
+        self.required_steps = required_steps or set(range(6))
 
         self._records: Dict[int, _PersonRecord] = {}
         self._verdicts: List[ComplianceVerdict] = []
@@ -133,7 +133,18 @@ class ComplianceStateMachine:
                     pass
 
         elif rec.state == WashState.WASHING:
-            if not in_sink_zone:
+            if rec.steps_detected >= self.required_steps:
+                # All steps detected while still at sink — fire green immediately
+                duration = rec.wash_duration
+                self._verdicts.append(ComplianceVerdict(
+                    track_id=rec.track_id,
+                    compliant=True,
+                    steps_detected=set(rec.steps_detected),
+                    wash_duration_sec=duration,
+                    message=f"Compliant: all 6 steps, {duration:.1f}s",
+                ))
+                del self._records[rec.track_id]
+            elif not in_sink_zone:
                 self._finalise(rec, skipped_sink=False)
 
     def track_lost(self, track_id: int) -> None:
@@ -175,9 +186,9 @@ class ComplianceStateMachine:
 
             compliant = full_duration_ok and all_steps_ok
             if compliant:
-                msg = f"Compliant: all 7 steps, {duration:.1f}s"
+                msg = f"Compliant: all 6 steps, {duration:.1f}s"
             elif not full_duration_ok and not all_steps_ok:
-                msg = f"Partial: {len(rec.steps_detected)}/7 steps, only {duration:.1f}s"
+                msg = f"Partial: {len(rec.steps_detected)}/6 steps, only {duration:.1f}s"
             elif not full_duration_ok:
                 msg = f"Partial: duration too short ({duration:.1f}s < {self.min_wash_duration_sec}s)"
             else:

@@ -77,7 +77,8 @@ class HandwashPipeline:
         )
 
         # ── Zone Engine (wide-angle pixel coords) ─────────────────
-        self.zone_engine = ZoneEngine(cfg["zones"])
+        zones = {name: data["polygon"] for name, data in cfg["zones"].items()}
+        self.zone_engine = ZoneEngine(zones)
 
         # ── Layer 2: Gesture Classifier (top-down frames) ─────────
         gesture_cfg = cfg["gesture"]
@@ -85,9 +86,9 @@ class HandwashPipeline:
         self._gesture_input_size: int = gesture_cfg["input_size"]
         self.gesture_classifier = GestureClassifier(
             weights=gesture_cfg["weights"],
-            sequence_length=gesture_cfg["sequence_length"],
             conf_threshold=gesture_cfg["conf_threshold"],
             input_size=self._gesture_input_size,
+            smoothing_window=gesture_cfg.get("smoothing_window", 8),
         )
 
         # ── Compliance & Output ───────────────────────────────────
@@ -108,6 +109,7 @@ class HandwashPipeline:
         self,
         source_wide: Optional[str | int] = None,
         source_topdown: Optional[str | int] = None,
+        gesture_start_sec: Optional[float] = None,
     ) -> None:
         """
         Open both camera sources and process frames in a loop.
@@ -157,39 +159,50 @@ class HandwashPipeline:
 
         prev_track_ids: set[int] = set()
 
-        # Keep last good frames so we can degrade gracefully if one camera drops
-        last_frame_wide: Optional[np.ndarray] = None
         last_frame_topdown: Optional[np.ndarray] = None
 
         try:
             while True:
                 ret_w, frame_w = cap_wide.read()
-                ret_t, frame_t = cap_topdown.read()
 
                 if not ret_w:
-                    if last_frame_wide is None:
-                        logger.error("Wide-angle camera failed on first frame — exiting.")
-                        break
-                    logger.warning("Wide-angle camera dropped a frame — using last good frame.")
-                    frame_w = last_frame_wide
-                else:
-                    last_frame_wide = frame_w
+                    break
+                last_frame_wide = frame_w
 
-                if not ret_t:
-                    if last_frame_topdown is None:
-                        logger.error("Top-down camera failed on first frame — exiting.")
-                        break
-                    logger.warning("Top-down camera dropped a frame — using last good frame.")
-                    frame_t = last_frame_topdown
+                wide_pos_sec = cap_wide.get(cv2.CAP_PROP_POS_MSEC) / 1000.0
+                # None = production mode (use zone detection)
+                # True = demo mode, timestamp reached
+                # False = demo mode, timestamp not yet reached
+                if gesture_start_sec is None:
+                    force_gesture = None
                 else:
-                    last_frame_topdown = frame_t
+                    force_gesture = wide_pos_sec >= gesture_start_sec
 
-                combined = self._process_frame(frame_w, frame_t, prev_track_ids)
+                # Demo mode: hold top-down video until gesture-start timestamp is reached
+                if force_gesture is False:
+                    frame_t = np.zeros_like(frame_w)
+                else:
+                    ret_t, frame_t = cap_topdown.read()
+                    if not ret_t:
+                        if last_frame_topdown is None:
+                            logger.error("Top-down camera failed on first frame — exiting.")
+                            break
+                        frame_t = last_frame_topdown
+                    else:
+                        last_frame_topdown = frame_t
+
+                combined = self._process_frame(frame_w, frame_t, prev_track_ids, force_gesture)
 
                 cv2.imshow("Handwash Compliance", combined)
                 if cv2.waitKey(1) & 0xFF == ord("q"):
                     break
         finally:
+            # Flush any tracks still active when the video ends or 'q' is pressed
+            for tid in list(self.state_machine._records.keys()):
+                self.state_machine.track_lost(tid)
+            for verdict in self.state_machine.pop_verdicts():
+                logger.info(f"[Track {verdict.track_id}] {verdict.message}")
+
             cap_wide.release()
             cap_topdown.release()
             cv2.destroyAllWindows()
@@ -204,6 +217,7 @@ class HandwashPipeline:
         frame_wide: np.ndarray,
         frame_topdown: np.ndarray,
         prev_track_ids: set,
+        force_gesture: Optional[bool] = None,
     ) -> np.ndarray:
         """
         Process one pair of frames and return the side-by-side visualisation.
@@ -226,9 +240,16 @@ class HandwashPipeline:
         for tid, track in tracks.items():
             zones = self.zone_engine.query(track.centroid)
 
-            # Gesture classification: use top-down camera crop
+            # Gesture classification: use top-down camera crop.
+            # force_gesture=None → production: use sink zone detection.
+            # force_gesture=True → demo: timestamp reached, classify.
+            # force_gesture=False → demo: timestamp not yet reached, skip.
             gesture_step = None
-            if zones.get("sink"):
+            if force_gesture is None:
+                should_classify = zones.get("sink", False)
+            else:
+                should_classify = force_gesture
+            if should_classify:
                 roi = self._get_topdown_roi(frame_topdown)
                 self.gesture_classifier.push_frame(roi)
                 if self.gesture_classifier.ready():
@@ -248,7 +269,8 @@ class HandwashPipeline:
         # 3. Process compliance verdicts
         for verdict in self.state_machine.pop_verdicts():
             logger.info(f"[Track {verdict.track_id}] {verdict.message}")
-            self.led.signal_verdict(verdict.compliant)
+            if verdict.compliant:
+                self.led.signal_verdict(True)
             record_event(
                 track_id=verdict.track_id,
                 compliant=verdict.compliant,
@@ -318,7 +340,7 @@ class HandwashPipeline:
 
         # Draw gesture label on top-down panel
         if gesture_pred is not None:
-            label = f"Step {gesture_pred.step_id + 1}/7: {gesture_pred.step_name}"
+            label = f"Step {gesture_pred.step_id + 1}/6: {gesture_pred.step_name}"
             conf_pct = int(gesture_pred.confidence * 100)
             label_conf = f"{label} ({conf_pct}%)"
             cv2.putText(

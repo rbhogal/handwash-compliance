@@ -58,6 +58,8 @@ def parse_args() -> argparse.Namespace:
         help="Top-down camera: index (e.g. 2) or path/RTSP URL. "
              "Overrides cameras.topdown.source in config.",
     )
+    # Dev/test only — bypasses zone detection for gesture classification
+    p.add_argument("--gesture-start", type=float, default=None, help=argparse.SUPPRESS)
     return p.parse_args()
 
 
@@ -67,4 +69,5 @@ if __name__ == "__main__":
     pipeline.run(
         source_wide=_parse_source(args.source),
         source_topdown=_parse_source(args.source_topdown),
+        gesture_start_sec=args.gesture_start,
     )

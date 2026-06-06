@@ -133,21 +133,27 @@ class GestureClassifier:
         if probs is None:
             return None
 
-        top1_id   = int(probs.top1)
         top1_conf = float(probs.top1conf)
 
         if top1_conf < self.conf_threshold:
             return None
 
+        # Use the model's own class names to avoid index-ordering mismatches
+        # between models trained on differently-ordered datasets.
+        model_names = results[0].names  # {yolo_idx: class_name}
+        _label_to_step = {v: k for k, v in WHO_STEP_LABELS.items()}
+
+        top1_name = model_names[int(probs.top1)]
+        top1_id = _label_to_step.get(top1_name, int(probs.top1))
+
         all_scores = {
-            WHO_STEP_LABELS[i]: float(probs.data[i])
-            for i in range(len(WHO_STEP_LABELS))
-            if i < len(probs.data)
+            model_names[i]: float(probs.data[i])
+            for i in range(len(probs.data))
         }
 
         return GesturePrediction(
             step_id=top1_id,
-            step_name=WHO_STEP_LABELS.get(top1_id, str(top1_id)),
+            step_name=WHO_STEP_LABELS.get(top1_id, top1_name),
             confidence=top1_conf,
             all_scores=all_scores,
         )

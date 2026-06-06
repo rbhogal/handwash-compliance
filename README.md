@@ -6,7 +6,7 @@ Deployed on **SiMa.ai Modalix** edge hardware with dual-camera input.
 ## Architecture
 
 ```
-Wide-angle camera (1280×720)         Top-down camera (640×640)
+Wide-angle camera (1920×1080)        Top-down camera (640×640)
         │                                      │
 [1] YOLOv8 detection + ByteTrack         (no tracking)
     → persons, sinks                           │
@@ -41,14 +41,34 @@ python scripts/run_pipeline.py \
 
 Dashboard auto-launches at **http://localhost:5000**.
 
+## Gesture Classifier Results
+
+The gesture classifier was fine-tuned from a PSKUS-trained baseline onto the METC dataset using Colab (`notebooks/finetune_metc.ipynb`).
+
+| Model | Test Accuracy |
+|-------|--------------|
+| PSKUS baseline (cross-dataset) | 13.3% |
+| Fine-tuned on METC | **71.4%** |
+| Original paper (Xception, METC) | 66.8% |
+
+Per-class accuracy on METC test set (8,054 frames):
+
+| Step | Label | Accuracy |
+|------|-------|----------|
+| 1 | palm_to_palm | 74.6% |
+| 2 | palm_over_dorsum | 67.3% |
+| 3 | fingers_interlaced | 53.3% |
+| 4 | backs_of_fingers | 77.3% |
+| 5 | rotational_thumb | 73.0% |
+| 6 | fingertips_to_palm | 81.2% |
+
+Reference: [Ivanovs et al. 2020 — Automated Quality Assessment of Hand Washing Using Deep Learning](https://arxiv.org/abs/2011.11383)
+
 ## Training
 
 **Detection (person + sink):**
 ```bash
-# 1. Download + prepare dataset
 python scripts/prepare_detection_data.py --max-samples 500
-
-# 2. Train
 python src/handwash/detection/train.py \
     --data config/detection_data.yaml \
     --weights yolov8n.pt \
@@ -56,15 +76,12 @@ python src/handwash/detection/train.py \
 ```
 
 **Gesture Classifier (WHO 6 steps):**
-```bash
-# 1. Preprocess METC dataset
-python scripts/prepare_gesture_data.py
 
-# 2. Train
-python src/handwash/gesture/train.py \
-    --weights yolov8n-cls.pt \
-    --epochs 50 --batch 32
-```
+Fine-tuning was done on Google Colab using `notebooks/finetune_metc.ipynb`:
+1. Starts from PSKUS-pretrained weights
+2. Fine-tunes on METC dataset (212 videos, ~48k frames)
+3. 50 epochs, lr=1e-4, dropout=0.2
+4. Best weights saved as `models/weights/gesture_classifier.pt`
 
 ## Datasets
 
@@ -84,6 +101,14 @@ python src/handwash/gesture/train.py \
 | 4 | rotational_thumb | Step 6 — Rotational rubbing of thumb |
 | 5 | fingertips_to_palm | Step 7 — Rotational rubbing of fingertips |
 
+## Zone Calibration
+
+Zone polygons (entry, sink, exit) are defined in `config/config.yaml` as pixel coordinates for the wide-angle camera. To recalibrate for a new camera position:
+
+```bash
+python scripts/calibrate_zones.py --frame path/to/frame.jpg
+```
+
 ## ONNX Export (for Modalix)
 
 ```bash
@@ -102,10 +127,15 @@ src/handwash/
 
 scripts/
 ├── run_pipeline.py             # Run full system
+├── calibrate_zones.py          # Interactive zone polygon calibration
+├── test_gesture.py             # Test gesture classifier on a video
+├── evaluate_gesture.py         # Evaluate per-class accuracy on test set
 ├── prepare_detection_data.py   # Download + prepare detection dataset
 ├── prepare_gesture_data.py     # Preprocess METC gesture dataset
-├── export_onnx.py              # Export to ONNX for Modalix
-└── evaluate.py                 # Benchmark + evaluate models
+└── export_onnx.py              # Export to ONNX for Modalix
+
+notebooks/
+└── finetune_metc.ipynb         # Colab fine-tuning notebook (PSKUS → METC)
 
 config/
 ├── config.yaml           # Cameras, zones, thresholds, model paths
@@ -118,12 +148,3 @@ config/
 ```bash
 pytest tests/
 ```
-
-## Team
-
-| Person | Module | Key File |
-|--------|--------|----------|
-| 1 | Detection | `src/handwash/detection/` |
-| 2 | Tracking | `src/handwash/tracking/` |
-| 3 | Gesture Classifier | `src/handwash/gesture/` |
-| 4 | Compliance + Output | `src/handwash/compliance/` |

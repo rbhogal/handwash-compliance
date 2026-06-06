@@ -76,27 +76,39 @@ class PersonTracker:
 
         seen_ids: set[int] = set()
 
+        # Collect all detections, then suppress any box whose centroid lies inside a larger box.
+        # This removes duplicate person detections (e.g. full-body + head of the same person).
+        all_detections = []
         for result in results:
             if result.boxes is None or result.boxes.id is None:
                 continue
             for box, tid in zip(result.boxes, result.boxes.id):
-                track_id = int(tid.item())
                 bbox = box.xyxy.squeeze().cpu().numpy()
-                conf = float(box.conf.item())
+                all_detections.append((int(tid.item()), bbox, float(box.conf.item())))
 
-                if track_id not in self._active:
-                    cx = (bbox[0] + bbox[2]) / 2.0
-                    cy = (bbox[1] + bbox[3]) / 2.0
-                    self._active[track_id] = Track(
-                        track_id=track_id,
-                        bbox=bbox,
-                        centroid=np.array([cx, cy]),
-                        confidence=conf,
-                    )
-                else:
-                    self._active[track_id].update(bbox, conf)
+        all_detections.sort(key=lambda d: (d[1][2]-d[1][0])*(d[1][3]-d[1][1]), reverse=True)
+        accepted: list[np.ndarray] = []
+        filtered: list[tuple] = []
+        for tid, bbox, conf in all_detections:
+            cx = (bbox[0] + bbox[2]) / 2.0
+            cy = (bbox[1] + bbox[3]) / 2.0
+            if not any(ab[0] <= cx <= ab[2] and ab[1] <= cy <= ab[3] for ab in accepted):
+                accepted.append(bbox)
+                filtered.append((tid, bbox, conf))
 
-                seen_ids.add(track_id)
+        for track_id, bbox, conf in filtered:
+            if track_id not in self._active:
+                cx = (bbox[0] + bbox[2]) / 2.0
+                cy = (bbox[1] + bbox[3]) / 2.0
+                self._active[track_id] = Track(
+                    track_id=track_id,
+                    bbox=bbox,
+                    centroid=np.array([cx, cy]),
+                    confidence=conf,
+                )
+            else:
+                self._active[track_id].update(bbox, conf)
+            seen_ids.add(track_id)
 
         # Prune tracks no longer visible
         lost = [tid for tid in self._active if tid not in seen_ids]

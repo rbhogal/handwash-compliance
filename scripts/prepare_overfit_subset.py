@@ -47,14 +47,19 @@ def main() -> None:
         n = max(1, int(len(images) * FRACTION))
         sampled = random.sample(images, n)
 
-        # Put everything in train/ — we want to overfit, no val needed
-        out_class = OUT_DIR / "train" / class_dir.name
-        out_class.mkdir(parents=True, exist_ok=True)
-
+        # train/ — the 10% subset we want to overfit on
+        out_train = OUT_DIR / "train" / class_dir.name
+        out_train.mkdir(parents=True, exist_ok=True)
         for img in sampled:
-            shutil.copy2(img, out_class / img.name)
+            shutil.copy2(img, out_train / img.name)
 
-        print(f"  {class_dir.name}: {n} / {len(images)} images")
+        # val/ — ultralytics requires it; reuse a few train images (fine for overfit test)
+        out_val = OUT_DIR / "val" / class_dir.name
+        out_val.mkdir(parents=True, exist_ok=True)
+        for img in sampled[:5]:
+            shutil.copy2(img, out_val / img.name)
+
+        print(f"  {class_dir.name}: {n} train / 5 val")
         total += n
 
     print(f"\nTotal: {total} images → {OUT_DIR}")

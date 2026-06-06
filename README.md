@@ -76,11 +76,16 @@ python src/handwash/detection/train.py \
 
 **Gesture Classifier (WHO 6 steps):**
 
-Fine-tuning was done on Google Colab using `notebooks/finetune_metc.ipynb`:
-1. Starts from PSKUS-pretrained weights
-2. Fine-tunes on METC dataset (212 videos, ~48k frames)
-3. 50 epochs, lr=1e-4, dropout=0.2
-4. Best weights saved as `models/weights/gesture_classifier.pt`
+Training was done in two stages on Google Colab using `notebooks/finetune_metc.ipynb`:
+
+1. **Stage 1 — Train on PSKUS dataset** (3,185 videos, 6 WHO steps)
+   - Base model: `yolov8n-cls.pt` (ImageNet pretrained)
+   - 50 epochs, batch=32
+
+2. **Stage 2 — Fine-tune on METC dataset** (212 videos, ~48k frames)
+   - Starts from PSKUS weights
+   - 50 epochs, lr=1e-4, dropout=0.2
+   - Best weights saved as `models/weights/gesture_classifier.pt`
 
 ## Datasets
 

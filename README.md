@@ -45,27 +45,28 @@ Dashboard auto-launches at **http://localhost:5000**.
 
 The gesture classifier was fine-tuned from a PSKUS-trained baseline onto the METC dataset using Colab (`notebooks/finetune_metc.ipynb`).
 
-| Model | Test Accuracy |
-|-------|--------------|
-| Trained on PSKUS → fine-tuned on METC (ours) | **71.4%** |
-| Original paper (Xception, METC) | 66.8% |
+| Model                                 | Test Accuracy |
+| ------------------------------------- | ------------- |
+| Trained on PSKUS → fine-tuned on METC | **71.4%**     |
+| Original paper (Xception, METC)       | 66.8%         |
 
 Per-class accuracy on METC test set (8,054 frames):
 
-| Step | Label | Accuracy |
-|------|-------|----------|
-| 1 | palm_to_palm | 74.6% |
-| 2 | palm_over_dorsum | 67.3% |
-| 3 | fingers_interlaced | 53.3% |
-| 4 | backs_of_fingers | 77.3% |
-| 5 | rotational_thumb | 73.0% |
-| 6 | fingertips_to_palm | 81.2% |
+| Step | Label              | Accuracy |
+| ---- | ------------------ | -------- |
+| 1    | palm_to_palm       | 74.6%    |
+| 2    | palm_over_dorsum   | 67.3%    |
+| 3    | fingers_interlaced | 53.3%    |
+| 4    | backs_of_fingers   | 77.3%    |
+| 5    | rotational_thumb   | 73.0%    |
+| 6    | fingertips_to_palm | 81.2%    |
 
 Reference: [Ivanovs et al. 2020 — Automated Quality Assessment of Hand Washing Using Deep Learning](https://arxiv.org/abs/2011.11383)
 
 ## Training
 
 **Detection (person + sink):**
+
 ```bash
 python scripts/prepare_detection_data.py --max-samples 500
 python src/handwash/detection/train.py \
@@ -89,22 +90,22 @@ Training was done in two stages on Google Colab using `notebooks/finetune_metc.i
 
 ## Datasets
 
-| Layer | Dataset | Source |
-|-------|---------|--------|
-| Detection | COCO 2017 (person) + Open Images V7 (sink) | Downloaded via fiftyone |
-| Gesture (Stage 1) | PSKUS — 3,185 videos, 6 WHO steps | https://zenodo.org/records/4537209 |
-| Gesture (Stage 2) | METC subset — 212 videos, 6 WHO steps | https://zenodo.org/records/5808789 |
+| Layer             | Dataset                                    | Source                             |
+| ----------------- | ------------------------------------------ | ---------------------------------- |
+| Detection         | COCO 2017 (person) + Open Images V7 (sink) | Downloaded via fiftyone            |
+| Gesture (Stage 1) | PSKUS — 3,185 videos, 6 WHO steps          | https://zenodo.org/records/4537209 |
+| Gesture (Stage 2) | METC subset — 212 videos, 6 WHO steps      | https://zenodo.org/records/5808789 |
 
 ## Gesture Classes (6 WHO steps)
 
-| Class | Label | WHO Step |
-|-------|-------|----------|
-| 0 | palm_to_palm | Step 2 — Rub hands palm to palm |
-| 1 | palm_over_dorsum | Step 3 — Right palm over left dorsum |
-| 2 | fingers_interlaced | Step 4 — Palm to palm fingers interlaced |
-| 3 | backs_of_fingers | Step 5 — Backs of fingers to opposing palms |
-| 4 | rotational_thumb | Step 6 — Rotational rubbing of thumb |
-| 5 | fingertips_to_palm | Step 7 — Rotational rubbing of fingertips |
+| Class | Label              | WHO Step                                    |
+| ----- | ------------------ | ------------------------------------------- |
+| 0     | palm_to_palm       | Step 2 — Rub hands palm to palm             |
+| 1     | palm_over_dorsum   | Step 3 — Right palm over left dorsum        |
+| 2     | fingers_interlaced | Step 4 — Palm to palm fingers interlaced    |
+| 3     | backs_of_fingers   | Step 5 — Backs of fingers to opposing palms |
+| 4     | rotational_thumb   | Step 6 — Rotational rubbing of thumb        |
+| 5     | fingertips_to_palm | Step 7 — Rotational rubbing of fingertips   |
 
 ## Zone Calibration
 
